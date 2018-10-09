@@ -1,11 +1,24 @@
 ---
-# File: main.yml - Default variables for Consul
+ansible_os_family: unix
+ansible_default_ipv4:
+  interface: eth0
+ansible_eth0:
+  ipv4:
+     address: "1.1.1.1"
+ansible_system: ubuntu
+consul_raw_key: consul_raw_key
+_consul_lan_servers:
+  - localhost
+_consul_wan_servercount: 1
+_consul_wan_servers:
+  - localhost
+
+item:
+  config_version: bootstrap
 
 ## Core
 consul_debug: no
-consul_enabled: yes
 is_virtualenv: "{{ lookup('env','VIRTUAL_ENV') | default('', true) }}"
-consul_install_dependencies: yes
 
 ### Package
 consul_version: "{{ lookup('env','CONSUL_VERSION') | default('1.2.3', true) }}"
@@ -40,8 +53,7 @@ consul_config_path: "/etc/consul"
 consul_configd_path: "{{ consul_config_path }}/consul.d"
 consul_bootstrap_state: "{{ consul_config_path }}/.consul_bootstrapped"
 consul_data_path: "/var/consul"
-consul_log_path: "{{ lookup('env','CONSUL_LOG_PATH') | default('/var/log/consul', true) }}"
-consul_log_file: "{{ lookup('env','CONSUL_LOG_FILE') | default('consul.log', true) }}"
+consul_log_path: "/var/log/consul"
 consul_run_path: "/var/run/consul"
 consul_binary: "{{ consul_bin_path }}/consul"
 
@@ -51,17 +63,13 @@ consul_user: "consul"
 consul_manage_group: no
 consul_group: "bin"
 
-### Log user, group, facility
-syslog_user: "{{ lookup('env','SYSLOG_USER') | default('root', true) }}"
-syslog_group: "{{ lookup('env','SYSLOG_GROUP') | default('adm', true) }}"
-consul_log_level: "{{ lookup('env','CONSUL_LOG_LEVEL') | default('INFO', true) }}"
-consul_syslog_enable: "{{ lookup('env','CONSUL_SYSLOG_ENABLE') | default(true, true) }}"
-consul_syslog_facility: "{{ lookup('env','CONSUL_SYSLOG_FACILITY') | default('local0', true) }}"
-
 ### Consul settings
 consul_datacenter: "{{ lookup('env','CONSUL_DATACENTER') | default('dc1', true) }}"
 consul_domain: "{{ lookup('env','CONSUL_DOMAIN') | default('consul', true) }}"
 consul_node_meta: {}
+consul_log_level: "{{ lookup('env','CONSUL_LOG_LEVEL') | default('INFO', true) }}"
+consul_syslog_enable: "{{ lookup('env','CONSUL_SYSLOG_ENABLE') | default(true, true) }}"
+consul_syslog_facility: "{{ lookup('env','CONSUL_SYSLOG_FACILITY') | default('local0', true) }}"
 consul_iface: "\
   {% if ansible_os_family == 'Windows' %}\
     {{ lookup('env','CONSUL_IFACE') | default(ansible_interfaces[0].interface_name, true) }}\
@@ -85,18 +93,6 @@ consul_retry_interval: "30s"
 consul_retry_interval_wan: "30s"
 consul_retry_max: 0
 consul_retry_max_wan: 0
-consul_env_vars:
-  - "CONSUL_UI_BETA=false"
-
-### Autopilot
-consul_autopilot_enable: "{{ lookup('env', 'CONSUL_AUTOPILOT_ENABLE') | default(false, true) }}"
-consul_autopilot_cleanup_dead_Servers: "{{ lookup('env', 'CONSUL_AUTOPILOT_CLEANUP_DEAD_SERVERS') | default(false, true) }}"
-consul_autopilot_last_contact_threshold: "{{ lookup('env', 'CONSUL_AUTOPILOT_LAST_CONTACT_THRESHOLD') | default('200ms', true) }}"
-consul_autopilot_max_trailing_logs: "{{ lookup('env', 'CONSUL_AUTOPILOT_MAX_TRAILING_LOGS') | default(250, true) }}"
-consul_autopilot_server_stabilization_time: "{{ lookup('env', 'CONSUL_AUTOPILOT_SERVER_STABILIZATION_TIME') | default('10s', true) }}"
-consul_autopilot_redundancy_zone_tag: "{{ lookup('env', 'CONSUL_AUTOPILOT_REDUNDANCY_ZONE_TAG') | default('az', true) }}"
-consul_autopilot_disable_upgrade_migration: "{{ lookup('env', 'CONSUL_AUTOPILOT_DISABLE_UPGRADE_MIGRATION') | default(false, true) }}"
-consul_autopilot_upgrade_version_tag: "{{ lookup('env', 'CONSUL_AUTOPILOT_UPGRADE_VERSION_TAG') | default('', true) }}"
 
 ### Addresses
 consul_bind_address: "\
@@ -132,7 +128,7 @@ consul_ports:
 
 ### Servers
 consul_group_name: "{{ lookup('env','CONSUL_GROUP_NAME') | default('consul_instances', true) }}"
-consul_join: []
+consul_join: ["127.0.0.1"]
 consul_join_wan: []
 consul_servers: "\
   {% set _consul_servers = [] %}\
@@ -143,6 +139,7 @@ consul_servers: "\
     {% endif %}\
   {% endfor %}\
   {{ _consul_servers }}"
+consul_gather_server_facts: no
 
 ## ACL
 consul_acl_policy: false
@@ -158,7 +155,7 @@ consul_acl_agent_master_token: "{{ lookup('env','CONSUL_ACL_AGENT_MASTER_TOKEN')
 
 ### Server ACL settings ###
 consul_acl_default_policy: "{{ lookup('env','CONSUL_ACL_DEFAULT_POLICY') | default('allow', true) }}"
-consul_acl_master_token: "{{ lookup('env','CONSUL_ACL_MASTER_TOKEN') | default('', true) }}"
+consul_acl_master_token: "{{ lookup('env','CONSUL_ACL_MASTER_TOKEN') | default('42424242-4242-4242-4242-424242424242', true) }}"
 consul_acl_master_token_display: "{{ lookup('env','CONSUL_ACL_MASTER_TOKEN_DISPLAY') | default(false, true) }}"
 consul_acl_replication_enable: "{{ lookup('env','CONSUL_ACL_REPLICATION_ENABLE') | default('',true) }}"
 consul_acl_replication_token: "{{ lookup('env','CONSUL_ACL_REPLICATION_TOKEN') | default('', true) }}"
@@ -180,7 +177,6 @@ consul_tls_verify_incoming: false
 consul_tls_verify_outgoing: true
 consul_tls_verify_incoming_https: false
 consul_tls_verify_server_hostname: false
-consul_tls_files_remote_src: no
 
 ## DNS
 consul_dnsmasq_enable: "{{ lookup('env','CONSUL_DNSMASQ_ENABLE') | default(false, true) }}"
@@ -201,8 +197,6 @@ consul_dnsmasq_no_resolv: false
 consul_dnsmasq_local_service: false
 consul_dnsmasq_listen_addresses: []
 consul_iptables_enable: "{{ lookup('env','CONSUL_IPTABLES_ENABLE') | default(false, true) }}"
-
-consul_enterprise: "{{ lookup('env','CONSUL_ENTERPRISE') | default(false, true) }}"
 
 # Performance
 consul_performance:

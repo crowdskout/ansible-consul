@@ -7,16 +7,13 @@
 - name: start consul
   import_tasks: start_consul.yml
 
-- name: reload consul
-  import_tasks: reload_consul.yml
+- name: reload consul configuration
+  import_tasks: reload_consul_conf.yml
 
 - name: restart dnsmasq
   service:
     name: dnsmasq
     state: restarted
 
-- name: start dnsmasq
-  service:
-    name: dnsmasq
-    enabled: yes
-    state: started
+- name: restart rsyslog
+  import_tasks: restart_rsyslog.yml
