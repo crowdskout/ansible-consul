@@ -3,6 +3,7 @@
 
 ## Core
 consul_debug: no
+consul_enabled: yes
 
 ### Package
 consul_version: "{{ lookup('env','CONSUL_VERSION') | default('0.8.4', true) }}"
@@ -86,6 +87,8 @@ consul_ports:
 
 ### Servers
 consul_group_name: "{{ lookup('env','CONSUL_GROUP_NAME') | default('cluster_nodes', true) }}"
+consul_servers: []
+consul_gather_server_facts: no
 consul_servers: "\
   {% set _consul_servers = [] %}\
   {% for host in groups[consul_group_name] %}\
@@ -95,7 +98,6 @@ consul_servers: "\
     {% endif %}\
   {% endfor %}\
   {{ _consul_servers }}"
-consul_gather_server_facts: no
 
 ## ACL
 consul_acl_enable: "{{ lookup('env','CONSUL_ACL_ENABLE') | default(false, true) }}"

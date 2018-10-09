@@ -6,6 +6,10 @@
 # dicts, and being so over YAML that this stuff just needs to get pitched
 # into the rubbish bin at some point in the immediate future :lol:
 
+- debug: var=consul_servers
+
+- debug: var=_consul_servers
+
 - name: Install netaddr dependency locally
   pip:
     name: netaddr
@@ -13,7 +17,7 @@
   become: false
 
 - name: Include checks/asserts
-  include: asserts.yml
+  import_tasks: asserts.yml
 
 - name: Include OS-specific variables
   include_vars: "{{ ansible_os_family }}.yml"
@@ -49,10 +53,10 @@
       tags: always
 
     - name: Include user and group settings
-      include: user_group.yml
+      import_tasks: user_group.yml
 
     - name: Include directory settings
-      include: dirs.yml
+      import_tasks: dirs.yml
 
     - name: Check for existing Consul binary
       stat:
@@ -60,19 +64,19 @@
       register: consul_binary_installed
 
     - name: Install OS packages and consul - locally
-      include: install.yml
+      include_tasks: install.yml
       when:
         - not consul_binary_installed.stat.exists | bool
         - not consul_install_remotely | bool
 
     - name: Install OS packages and consul - remotely
-      include: install_remote.yml
+      include_tasks: install_remote.yml
       when:
         - not consul_binary_installed.stat.exists | bool
         - consul_install_remotely | bool
 
     # XXX: Individual gossip tasks are deprecated and need to be removed
-    # - include: ../tasks/encrypt_gossip.yml
+    # - import_tasks: ../tasks/encrypt_gossip.yml
 
     - block:
         - name: Check for gossip encryption key on previously boostrapped server
@@ -144,14 +148,14 @@
       delegate_to: localhost
 
     - name: Create Consul configuration
-      include: config.yml
+      include_tasks: config.yml
 
     - name: Create ACL configuration
-      include: acl.yml
+      include_tasks: acl.yml
       when: consul_acl_enable | bool
 
     - name: Create TLS configuration
-      include: tls.yml
+      include_tasks: tls.yml
       when: consul_tls_enable | bool
 
     - block:
@@ -249,13 +253,13 @@
           dest: /etc/consul/.consul_bootstrapped
           state: touch
 
-      - include: ../tasks/dnsmasq.yml
+      - include_tasks: ../tasks/dnsmasq.yml
         when: consul_dnsmasq_enable | bool
 
-      - include: ../tasks/iptables.yml
+      - include_tasks: ../tasks/iptables.yml
         when: consul_iptables_enable | bool
 
-      - include: ../tasks/client.yml
+      - include_tasks: ../tasks/client.yml
         when:
           - consul_node_role == "client"
           - ansible_os_family == "Debian"
@@ -299,7 +303,7 @@
       tags: always
 
     - name: (Windows) Include directory settings
-      include: dirs.yml
+      include_tasks: dirs.yml
 
     - name: (Windows) Check for existing Consul binary
       win_stat:
@@ -307,7 +311,7 @@
       register: consul_binary_installed
 
     - name: (Windows) Install OS packages and consul
-      include: install_windows.yml
+      include_tasks: install_windows.yml
       when:
         - not consul_binary_installed.stat.exists | bool
 
@@ -382,7 +386,7 @@
       delegate_to: localhost
 
     - name: (Windows) Create Consul configuration
-      include: config_windows.yml
+      import_tasks: config_windows.yml
 
     - name: (Windows) Ensure neither ACL nor TLS are requested
       fail:
@@ -391,11 +395,11 @@
         - (consul_acl_enable | bool) or (consul_tls_enable | bool)
 
     - name: (Windows) Create ACL configuration
-      include: acl.yml
+      include_tasks: acl.yml
       when: consul_acl_enable | bool
 
     - name: (Windows) Create TLS configuration
-      include: tls.yml
+      include_tasks: tls.yml
       when: consul_tls_enable | bool
 
     - block:
@@ -428,13 +432,13 @@
           state: touch
         when: ansible_os_family == "Windows"
 
-      - include: ../tasks/dnsmasq.yml
+      - include_tasks: ../tasks/dnsmasq.yml
         when: consul_dnsmasq_enable | bool
 
-      - include: ../tasks/iptables.yml
+      - include_tasks: ../tasks/iptables.yml
         when: consul_iptables_enable | bool
 
-      - include: ../tasks/client.yml
+      - include_tasks: ../tasks/client.yml
         when:
           - consul_node_role == "client"
           - ansible_os_family == "Debian"
